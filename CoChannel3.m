@@ -11,8 +11,8 @@ L_feeder=-3; %(dB)
 L_body=-1; %(dB)
 UE_gain=-3; %(dBi)
 L_entry=-10; %(dB)
-h_BSa=20; %antenna height (m)
-h_BSb=20;  %antenna height (m)
+h_BSa=40; %antenna height (m)
+h_BSb=40;  %antenna height (m)
 d_sep=6000; % (m) seperation distance between both networks
 % Note d_sep=0 coresponds to cells touching, not overlaping
 r_a=4000; %cell radius (m)
@@ -34,7 +34,7 @@ global HEXtheta
 global HEXd
 
 %Noise
-noisefloor=10.*log10(1.380649e-23*290*bw*1000)+5;  %dBm
+noisefloor=10.*log10(1.380649e-23*290*bw*1000)+nf;  %dBm
 N=10.^(noisefloor./10); %mW
 
 outline=NaN(7,2,60);
@@ -49,11 +49,11 @@ BS_a3=[0,0,h_BSa;0.866,-0.5,sin(pi*tilt/180)];
 
 %Center positions of each hex cell
 x1=0+BS_a(1,1);
-y1=r_a+BS_a(2,1);
+y1=r_a+BS_a(1,2);
 x2=r_a.*sqrt(3)/2+BS_a(1,1);
-y2=-1/2.*r_a+BS_a(2,1);
+y2=-1/2.*r_a+BS_a(1,2);
 x3=-sqrt(3)/2.*r_a+BS_a(1,1);
-y3=-1/2.*r_a+BS_a(2,1);
+y3=-1/2.*r_a+BS_a(1,2);
 
 
 %matrix for storing drone position in all three sectors
@@ -75,7 +75,7 @@ end
 BS_b=[0,4*r_a+d_sep,h_BSb;0,-1,sin(pi*tilt/180)]; %position and antenna orrientation base station
 UE_b=zeros(3,57,n_a);
 
-UE_b(3,:,:)=0;
+UE_b(3,:,:)=1.5;
 for q=1
 [UE_b(1:2,1,:),outline(:,:,4)]=randHEX(r_a,BS_b(1,2)+0,BS_b(1,1)+0,n_a);
 
@@ -207,9 +207,9 @@ d2=[UE_a(1,2,i)-BS_a2(1,1),UE_a(2,2,i)-BS_a2(1,2),UE_a(3,2,i)-BS_a2(1,3)];
 d3=[UE_a(1,3,i)-BS_a3(1,1),UE_a(2,3,i)-BS_a3(1,2),UE_a(3,3,i)-BS_a3(1,3)];
 
 
-I_dBmUE1=SINR_target+noisefloor-F1336V(UE_a(:,1,i),BS_a1(1,:),BS_a1(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d1)))-UE_gain;
-I_dBmUE2=SINR_target+noisefloor-F1336V(UE_a(:,2,i),BS_a2(1,:),BS_a2(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d2)))-UE_gain;
-I_dBmUE3=SINR_target+noisefloor-F1336V(UE_a(:,3,i),BS_a3(1,:),BS_a3(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d3)))-UE_gain;
+I_dBmUE1=SINR_target+noisefloor-F1336V(UE_a(:,1,i),BS_a1(1,:),BS_a1(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d1)+1e-3))-UE_gain;
+I_dBmUE2=SINR_target+noisefloor-F1336V(UE_a(:,2,i),BS_a2(1,:),BS_a2(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d2)+1e-3))-UE_gain;
+I_dBmUE3=SINR_target+noisefloor-F1336V(UE_a(:,3,i),BS_a3(1,:),BS_a3(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d3)+1e-3))-UE_gain;
 
 if I_dBmUE1>max_dBmUE
     I_dBmUE1=max_dBmUE;
