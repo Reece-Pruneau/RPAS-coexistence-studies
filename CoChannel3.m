@@ -6,7 +6,6 @@ lambda=299792458/fc; %wavelength (m)
 bw=6000000; %bandwidth (Hz)
 tilt=-3;  %mechanical downtilt (degrees)
 SINR_target=10; %(dB)
-nf=5; %noise factor
 L_feeder=-3; %(dB)
 L_body=-1; %(dB)
 UE_gain=-3; %(dBi)
@@ -236,7 +235,7 @@ if I_dBmUE3<min_dBmUE
     n_UEminA=n_UEminA+1;
 end
 
-I(i)=10.^((I_dBmUE1+F1336V(UE_a(:,1,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D1)))+UE_gain)./10)+10.^((I_dBmUE2+F1336V(UE_a(:,2,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D2)))+UE_gain)./10)+10.^((I_dBmUE3+F1336V(UE_a(:,2,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D3)))+UE_gain)./10);
+I(i)=10.^((I_dBmUE1+F1336V(UE_a(:,1,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D1)))+UE_gain)./10)+10.^((I_dBmUE2+F1336V(UE_a(:,2,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D2)))+UE_gain)./10)+10.^((I_dBmUE3+F1336V(UE_a(:,3,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D3)))+UE_gain)./10);
 
 
 end
@@ -257,7 +256,7 @@ for i=1:60
     xlabel('x position (m)')
     ylabel('y position (m)')
 end
-plot(outline(:,2,4),outline(:,1,1),'r')
+plot(outline(:,2,4),outline(:,1,4),'r')
 hold off
 
 subplot(1,2,2)
