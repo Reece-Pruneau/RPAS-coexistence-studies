@@ -1,4 +1,16 @@
 function G = F1336(phi,theta,G0)
+%function G=F1336(phi,theta,G0)
+%
+%function returns the gain of a sectoral antenna in dBi
+%Based on the ITU model F.1336 recomendation 3.1
+%INPUTS
+%phi (degrees) horizontal plane azimuth angle
+%theta (degrees) vertical plane elevation angle
+%
+%
+%All other parameters must be manually set bellow
+%
+%
 Ka=0.7;
 Kp=0.7;
 Kh=0.7;
