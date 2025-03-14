@@ -1,4 +1,4 @@
-function [E, L] = P1546FieldStrMixed(f,t,heff,h2,R2,area,d_v,path_c,pathinfo,varargin)
+function [L, E] = P1546FieldStrMixed(f,t,heff,h2,R2,area,d_v,path_c,pathinfo,varargin)
 % P1546FieldStrMixed: Recommendation ITU-R P.1546-6  
 %
 % [E, L] = P1546FieldStrMixed(f,t,heff,h2,R2,area,d_v,path_c,pathinfo,varargin)
