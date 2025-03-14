@@ -1,3 +1,12 @@
+%Main function version 3
+%
+% PhiDistribution.m must be ran first before this one 
+%
+% n_a controls the overall length of the monte carlo simulation, and
+% therefore controls the run time of the script
+%
+%No mathworks toolboxes need to be installed to execute this version
+
 
 tic
 
@@ -41,10 +50,10 @@ outline=NaN(7,2,60);
 %Interfering network A
 
 %position and antenna orrientation
-BS_a=[0,0,h_BSa;0,1,sin(pi*tilt/180)];
-BS_a1=[0,0,h_BSa;0,1,sin(pi*tilt/180)];
-BS_a2=[0,0,h_BSa;0.866,-0.5,sin(pi*tilt/180)];
-BS_a3=[0,0,h_BSa;-0.866,-0.5,sin(pi*tilt/180)];
+BS_a=[0,0,h_BSa;0,1,0];
+BS_a1=[0,0,h_BSa;0,1,0];
+BS_a2=[0,0,h_BSa;0.866,-0.5,0];
+BS_a3=[0,0,h_BSa;-0.866,-0.5,0];
 
 %Center positions of each hex cell
 x1=0+BS_a(1,1);
@@ -71,7 +80,7 @@ UE_a(3,3,i)=(rand*270)+30;
 end
 
 %Victim Network B
-BS_b=[0,4*r_a+d_sep,h_BSb;0,-1,sin(pi*tilt/180)]; %position and antenna orrientation base station
+BS_b=[0,4*r_a+d_sep,h_BSb;0,-1,0]; %position and antenna orrientation base station
 UE_b=zeros(3,57,n_a);
 
 UE_b(3,:,:)=1.5;
@@ -158,9 +167,9 @@ for i=1:n_a
 
 %Calculate amount of self interference
 
-for w=2:length(UE_b(1,:))
+for w=2:length(UE_b(1,:,1))
     %calculate LOS displacement vector in xy plane
-D=[UE_b(1,w)-BS_b(1,1),UE_b(2,w)-BS_b(1,2)];
+D=[UE_b(1,w,i)-BS_b(1,1),UE_b(2,w,i)-BS_b(1,2)];
 
 %angle between BS max gain vector and displacement vector in xy plane
 phi=180.*acos(dot(D,BS_b(2,1:2))./norm(D))./pi;
@@ -243,6 +252,7 @@ end
 I_0=mean(I_self);
 SINR_0=S_const./(N+I_self);
 SINR_const=S_const./(N+I_self+I);
+
 bitloss=100.*(log2(1+SINR_0)-log2(1+SINR_const))./(log2(1+SINR_0)+log2(1+SINR_const));
 
 average_throughput_loss=mean(bitloss)
