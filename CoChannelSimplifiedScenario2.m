@@ -16,6 +16,7 @@ clear all
 %start run timer
 tic
 
+
 fc=708000000; %center frequency (Hz)
 lambda=299792458/fc; %wavelength (m)
 bw=6000000; %bandwidth (Hz)
@@ -107,6 +108,7 @@ plot([BS_a1(1,1),BS_b1(1,1)],[BS_a1(1,2),BS_b1(1,2)],'k--')
 %legend('victim network','victim network','aerial network','reference sector','Aerial UE','Terestrial UE','','seperation distance')
 hold off
 
+
 %count number of UE over or under tx power range
 n_UEmaxA=0;
 n_UEmaxB=0;
@@ -139,6 +141,7 @@ D3=[UE_b(1,3,i)-BS_b1(1,1),UE_b(2,3,i)-BS_b1(1,2),UE_b(3,3,i)-BS_b1(1,3)];
 %angle between BS max gain vector and displacement vector in xy plane
 PHI2b=180.*acos(dot(D2(1:2),BS_b1(2,1:2))./norm(D2(1:2)))./pi;
 PHI3b=180.*acos(dot(D3(1:2),BS_b1(2,1:2))./norm(D3(1:2)))./pi;
+
 %elevation angle
 THETA2b=180.*acos(dot([norm(D2(1:2)),D2(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D2))./pi;
 THETA3b=180.*acos(dot([norm(D3(1:2)),D3(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D3))./pi;
@@ -151,6 +154,7 @@ d3=[UE_b(1,3,i)-BS_b3(1,1),UE_b(2,3,i)-BS_b3(1,2),UE_b(3,3,i)-BS_b3(1,3)];
 %angle between own BS max gain vector and displacement vector in xy plane
 phi2b=180.*acos(dot(d2(1:2),BS_b2(2,1:2))./norm(d2(1:2)))./pi;
 phi3b=180.*acos(dot(d3(1:2),BS_b3(2,1:2))./norm(d3(1:2)))./pi;
+
 %elevation angle
 theta2b=180.*acos(dot([norm(d2(1:2)),d2(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d2))./pi;
 theta3b=180.*acos(dot([norm(d2(1:2)),d3(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d3))./pi;
@@ -161,18 +165,17 @@ AntGain_b3_b3=F1336(phi3b,theta3b,G_0);
 
 %propagation loss to Own BS
 %free space
-L_b2_b2=20.*log10(lambda./(4.*pi.*norm(d2)));
-L_b3_b3=20.*log10(lambda./(4.*pi.*norm(d3)));
+%L_b2_b2=20.*log10(lambda./(4.*pi.*norm(d2)));
+%L_b3_b3=20.*log10(lambda./(4.*pi.*norm(d3)));
 
 %P1546
-%L_b2_b2=-P1546FieldStrMixed(700,50,1.5,h_BSb,0,'Suburban',norm(d2)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
-%L_b3_b3=-P1546FieldStrMixed(700,50,1.5,h_BSb,0,'Suburban',norm(d2)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b2_b2=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Suburban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b3_b3=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Suburban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
 
 
 %I_dBmUE1=SINR_target+noisefloor-F1336V(UE_b(:,1,i),BS_b1(1,:),BS_b1(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d1)+1e-3))-UE_gain;
 I_dBmUE4=SINR_target+noisefloor-AntGain_b2_b2-L_b2_b2-UE_gain-L_feeder-L_body;
 I_dBmUE5=SINR_target+noisefloor-AntGain_b3_b3-L_b3_b3-UE_gain-L_feeder-L_body;
-
 
 
 
@@ -184,6 +187,7 @@ if I_dBmUE4<min_dBmUE
     I_dBmUE4=min_dBmUE;
     n_UEminB=n_UEminB+1;
 end
+
 if I_dBmUE5>max_dBmUE
     I_dBmUE5=max_dBmUE;
     n_UEmaxB=n_UEmaxB+1;
@@ -200,12 +204,12 @@ AntGain_b3_b1=F1336(PHI3b,THETA3b,G_0);
 
 %propagation loss to reference BS
 %free space
-L_b2_b1=20.*log10(lambda./(4.*pi.*norm(D2)));
-L_b3_b1=20.*log10(lambda./(4.*pi.*norm(D3)));
+%L_b2_b1=20.*log10(lambda./(4.*pi.*norm(D2)));
+%L_b3_b1=20.*log10(lambda./(4.*pi.*norm(D3)));
 
 %P1546
-%L_b2_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D2)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
-%L_b3_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D3)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b2_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b3_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D3(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
 
 
 I_self(i)=10.^((I_dBmUE4+AntGain_b2_b1+L_b2_b1+UE_gain+L_body+L_feeder)./10);
@@ -226,9 +230,9 @@ D2a=[UE_a(1,2,i)-BS_b1(1,1),UE_a(2,2,i)-BS_b1(1,2),UE_a(3,2,i)-BS_b1(1,3)];
 D3a=[UE_a(1,3,i)-BS_b1(1,1),UE_a(2,3,i)-BS_b1(1,2),UE_a(3,3,i)-BS_b1(1,3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-PHI1a=180.*acos(dot(D1a(1:2),BS_b1(2,1:2))./norm(D1a(1:2)))./pi;
-PHI2a=180.*acos(dot(D2a(1:2),BS_b1(2,1:2))./norm(D2a(1:2)))./pi;
-PHI3a=180.*acos(dot(D3a(1:2),BS_b1(2,1:2))./norm(D3a(1:2)))./pi;
+PHI1a=180.*acos(dot(D1a(1:2),BS_b1(2,1:2))./norm(D1a(1:2))./norm(BS_b1(2,1:2)))./pi;
+PHI2a=180.*acos(dot(D2a(1:2),BS_b1(2,1:2))./norm(D2a(1:2))./norm(BS_b1(2,1:2)))./pi;
+PHI3a=180.*acos(dot(D3a(1:2),BS_b1(2,1:2))./norm(D3a(1:2))./norm(BS_b1(2,1:2)))./pi;
 
 %elevation angle
 THETA1a=180.*acos(dot([norm(D1a(1:2)),D1a(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D1a))./pi;
@@ -240,9 +244,9 @@ d2a=[UE_a(1,2,i)-BS_a1(1,1),UE_a(2,2,i)-BS_a1(1,2),UE_a(3,2,i)-BS_a1(1,3)];
 d3a=[UE_a(1,3,i)-BS_a1(1,1),UE_a(2,3,i)-BS_a1(1,2),UE_a(3,3,i)-BS_a1(1,3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-phi1a=180.*acos(dot(d1a(1:2),BS_a1(2,1:2))./norm(d1a(1:2)))./pi;
-phi2a=180.*acos(dot(d2a(1:2),BS_a2(2,1:2))./norm(d2a(1:2)))./pi;
-phi3a=180.*acos(dot(d3a(1:2),BS_a3(2,1:2))./norm(d3a(1:2)))./pi;
+phi1a=180.*acos(dot(d1a(1:2),BS_a1(2,1:2))./norm(d1a(1:2))./norm(BS_a1(2,1:2)))./pi;
+phi2a=180.*acos(dot(d2a(1:2),BS_a2(2,1:2))./norm(d2a(1:2))./norm(BS_a2(2,1:2)))./pi;
+phi3a=180.*acos(dot(d3a(1:2),BS_a3(2,1:2))./norm(d3a(1:2))./norm(BS_a3(2,1:2)))./pi;
 
 %elevation angle
 theta1a=180.*acos(dot([norm(d1a(1:2)),d1a(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d1a))./pi;
@@ -277,6 +281,7 @@ if I_dBmUE2<min_dBmUE
     I_dBmUE2=min_dBmUE;
     n_UEminA=n_UEminA+1;
 end
+
 if I_dBmUE3>max_dBmUE
     I_dBmUE3=max_dBmUE;
     n_UEmaxA=n_UEmaxA+1;
@@ -313,12 +318,15 @@ SINR_0=S_const./(N+I_self);
 %SINR with drone interference
 SINR_const=S_const./(N+I_self+I);
 
+%throughput (b/s)
+throughput_0 = 0.4.*bw.*log2(1+SINR_0);
+throughput = 0.4.*bw.*log2(1+SINR_const);
+
 %throughput loss (%)
-bitloss=100.*(log2(1+SINR_0)-log2(1+SINR_const))./(log2(1+SINR_0)+log2(1+SINR_const));
+bitloss=100.*(log2(1+SINR_0)-log2(1+SINR_const))./(log2(1+SINR_0));
 
 %average over all n_a
 average_throughput_loss=mean(bitloss)
-
 
 
 %end timer
