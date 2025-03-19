@@ -1,13 +1,13 @@
 %Main function version 3
 %
-% PhiDistribution.m must be ran first before this one 
+% 
 %
 % n_a controls the overall length of the monte carlo simulation, and
 % therefore controls the run time of the script
 %
 %No mathworks toolboxes need to be installed to execute this version
 
-
+clear all
 tic
 
 fc=700000000; %center frequency (Hz)
@@ -16,19 +16,20 @@ bw=6000000; %bandwidth (Hz)
 tilt=-3;  %mechanical downtilt (degrees)
 SINR_target=10; %(dB)
 L_feeder=-3; %(dB)
-L_body=-1; %(dB)
+L_body=-4; %(dB)
 UE_gain=-3; %(dBi)
 L_entry=-10; %(dB)
-h_BSa=40; %antenna height (m)
-h_BSb=40;  %antenna height (m)
-d_sep=6000; % (m) seperation distance between both networks
+h_BSa=30; %antenna height (m)
+h_BSb=30;  %antenna height (m)
+h_UEb=1.5;
+d_sep=90000; % (m) seperation distance between both networks
 % Note d_sep=0 coresponds to cells touching, not overlaping
 r_a=4000; %cell radius (m)
-n_a=100; %number of monte carlo runs
+n_a=10000; %number of monte carlo runs
 max_dBmUE=23; %max transmiting power of UEs (dBm)
 min_dBmUE=-40; %min transmiting power of UEs (dBm)
 nf=5; %noise figure (dB)
-
+G_0=15; %peak antenna gain (dBi)
 
 
 %count number of UE over or under tx power range
@@ -37,9 +38,7 @@ n_UEmaxB=0;
 n_UEminA=0;
 n_UEminB=0;
 
-global HEXphi
-global HEXtheta
-global HEXd
+
 
 %Noise
 noisefloor=10.*log10(1.380649e-23*290*bw*1000)+nf;  %dBm
@@ -83,7 +82,7 @@ end
 BS_b=[0,4*r_a+d_sep,h_BSb;0,-1,0]; %position and antenna orrientation base station
 UE_b=zeros(3,57,n_a);
 
-UE_b(3,:,:)=1.5;
+UE_b(3,:,:)=h_UEb;
 for q=1
 [UE_b(1:2,1,:),outline(:,:,4)]=randHEX(r_a,BS_b(1,2)-r_a,BS_b(1,1)+0,n_a);
  
@@ -153,6 +152,7 @@ for q=1
 [UE_b(1:2,57,:),outline(:,:,60)]=randHEX(r_a,BS_b(1,2)+12.5*r_a,BS_b(1,1)+sqrt(3)*r_a/2,n_a);
 end
 
+[HEXphi,HEXtheta,HEXd]=PhiDistribution(h_UEb,h_BSb,r_a,100000);
 
 %WANTED SIGNAL
 S_const=10.^((SINR_target+noisefloor)./10);
@@ -161,7 +161,7 @@ S_const=10.^((SINR_target+noisefloor)./10);
 I=zeros(1,n_a); %aggregate Interference power (mW)
 I_self=zeros(1,n_a);
 
-%Calculate amount of self interference
+
 for i=1:n_a
 
 
@@ -182,7 +182,7 @@ if rand<=0.5
            L_entry=0;
        end
 
-I_dBmUE=SINR_target+noisefloor-F1336(HEXphi(round(rand*999999)+1),HEXtheta(round(rand*999999)+1),18)-UE_gain-L_body-L_entry+P1546FieldStrMixed(700,50,1.5,40,0,'Suburban',HEXd(round(rand*999999)+1)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', 1.5);
+I_dBmUE=SINR_target+noisefloor-F1336(HEXphi(round(rand*99999)+1),HEXtheta(round(rand*99999)+1),G_0,tilt)-UE_gain-L_body-L_entry+P1546FieldStrMixed(700,50,h_BSb,h_UEb,10,'Suburban',HEXd(round(rand*99999)+1)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb);
 
 if I_dBmUE>max_dBmUE
     I_dBmUE=max_dBmUE;
@@ -193,7 +193,7 @@ if I_dBmUE<min_dBmUE
     n_UEminB=n_UEminB+1;
 end
 
-I_self(i)=I_self(i)+10.^((I_dBmUE+F1336(phi,theta,18)+UE_gain+L_body+L_entry-P1546FieldStrMixed(700,50,1.5,40,0,'Suburban',norm(D)./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', 1.5))./10);
+I_self(i)=I_self(i)+10.^((I_dBmUE+F1336V(UE_b(:,w,i),BS_b(1,:),BS_b(2,:),G_0,tilt)+UE_gain+L_body+L_entry-P1546FieldStrMixed(700,50,h_BSb,h_UEb,10,'Suburban',norm(D(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb))./10);
 
 end
 
@@ -215,9 +215,9 @@ d2=[UE_a(1,2,i)-BS_a2(1,1),UE_a(2,2,i)-BS_a2(1,2),UE_a(3,2,i)-BS_a2(1,3)];
 d3=[UE_a(1,3,i)-BS_a3(1,1),UE_a(2,3,i)-BS_a3(1,2),UE_a(3,3,i)-BS_a3(1,3)];
 
 
-I_dBmUE1=SINR_target+noisefloor-F1336V(UE_a(:,1,i),BS_a1(1,:),BS_a1(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d1)+1e-3))-UE_gain;
-I_dBmUE2=SINR_target+noisefloor-F1336V(UE_a(:,2,i),BS_a2(1,:),BS_a2(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d2)+1e-3))-UE_gain;
-I_dBmUE3=SINR_target+noisefloor-F1336V(UE_a(:,3,i),BS_a3(1,:),BS_a3(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d3)+1e-3))-UE_gain;
+I_dBmUE1=SINR_target+noisefloor-F1336V(UE_a(:,1,i),BS_a1(1,:),BS_a1(2,:),G_0,tilt)-20.*log10(lambda./(4.*pi.*norm(d1)+1e-3))-UE_gain;
+I_dBmUE2=SINR_target+noisefloor-F1336V(UE_a(:,2,i),BS_a2(1,:),BS_a2(2,:),G_0,tilt)-20.*log10(lambda./(4.*pi.*norm(d2)+1e-3))-UE_gain;
+I_dBmUE3=SINR_target+noisefloor-F1336V(UE_a(:,3,i),BS_a3(1,:),BS_a3(2,:),G_0,tilt)-20.*log10(lambda./(4.*pi.*norm(d3)+1e-3))-UE_gain;
 
 if I_dBmUE1>max_dBmUE
     I_dBmUE1=max_dBmUE;
@@ -244,7 +244,7 @@ if I_dBmUE3<min_dBmUE
     n_UEminA=n_UEminA+1;
 end
 
-I(i)=10.^((I_dBmUE1+F1336V(UE_a(:,1,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D1)))+UE_gain)./10)+10.^((I_dBmUE2+F1336V(UE_a(:,2,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D2)))+UE_gain)./10)+10.^((I_dBmUE3+F1336V(UE_a(:,3,i),BS_b(1,:),BS_b(2,:),18)+20.*log10(lambda./(4.*pi.*norm(D3)))+UE_gain)./10);
+I(i)=10.^((I_dBmUE1+F1336V(UE_a(:,1,i),BS_b(1,:),BS_b(2,:),18,tilt)+20.*log10(lambda./(4.*pi.*norm(D1)))+UE_gain)./10)+10.^((I_dBmUE2+F1336V(UE_a(:,2,i),BS_b(1,:),BS_b(2,:),18,tilt)+20.*log10(lambda./(4.*pi.*norm(D2)))+UE_gain)./10)+10.^((I_dBmUE3+F1336V(UE_a(:,3,i),BS_b(1,:),BS_b(2,:),18,tilt)+20.*log10(lambda./(4.*pi.*norm(D3)))+UE_gain)./10);
 
 
 end
@@ -253,7 +253,7 @@ I_0=mean(I_self);
 SINR_0=S_const./(N+I_self);
 SINR_const=S_const./(N+I_self+I);
 
-bitloss=100.*(log2(1+SINR_0)-log2(1+SINR_const))./(log2(1+SINR_0)+log2(1+SINR_const));
+bitloss=100.*(log2(1+SINR_0)-log2(1+SINR_const))./(log2(1+SINR_0));
 
 average_throughput_loss=mean(bitloss)
 
