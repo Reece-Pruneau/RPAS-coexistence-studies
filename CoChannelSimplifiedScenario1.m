@@ -54,7 +54,7 @@ outline=NaN(7,2,4);
 
 %Interfering network A
 %position and antenna orrientation of BS
-BS_a1=[0,0,h_BSa;0,1,sin(pi*tilt/180)];
+BS_a1=[0,0,h_BSa;0,1,0];
 
 
 %Center positions of aerial sector
@@ -68,7 +68,6 @@ UE_a=zeros(3,1,n_a);
 
 UE_a(:,1,1)=[0,2*r_a,300];
 
-
 outline(:,:,1)=[BS_a1(1,2)+r_a,BS_a1(1,1)]+[r_a,0;r_a/2,sqrt(3)*r_a/2;-r_a/2,sqrt(3)*r_a/2;-r_a,0;-r_a/2,-sqrt(3)*r_a/2;r_a/2,-sqrt(3)*r_a/2;r_a,0];
 
 
@@ -76,9 +75,9 @@ outline(:,:,1)=[BS_a1(1,2)+r_a,BS_a1(1,1)]+[r_a,0;r_a/2,sqrt(3)*r_a/2;-r_a/2,sqr
 
 %Victim Network B
 %three BS antennas at same position and 120 deg spread
-BS_b1=[0,d_sep,h_BSb;0,-1,sin(pi*tilt/180)]; %position and antenna orrientation base station
-BS_b2=[0,d_sep,h_BSb;-0.866,0.5,sin(pi*tilt/180)];
-BS_b3=[0,d_sep,h_BSb;0.866,0.5,sin(pi*tilt/180)];
+BS_b1=[0,d_sep,h_BSb;0,-1,0]; %position and antenna orrientation base station
+BS_b2=[0,d_sep,h_BSb;-0.866,0.5,0];
+BS_b3=[0,d_sep,h_BSb;0.866,0.5,0];
 
 UE_b=zeros(3,3,n_a);
 
@@ -138,11 +137,11 @@ D2=[UE_b(1,2,i)-BS_b1(1,1),UE_b(2,2,i)-BS_b1(1,2),UE_b(3,2,i)-BS_b1(1,3)];
 D3=[UE_b(1,3,i)-BS_b1(1,1),UE_b(2,3,i)-BS_b1(1,2),UE_b(3,3,i)-BS_b1(1,3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-PHI2b=180.*acos(dot(D2(1:2),BS_b1(2,1:2))./norm(D2(1:2))./norm(BS_b1(2,1:2)))./pi;
-PHI3b=180.*acos(dot(D3(1:2),BS_b1(2,1:2))./norm(D3(1:2))./norm(BS_b1(2,1:2)))./pi;
+PHI2b=acosd(dot(D2(1:2),BS_b1(2,1:2))./norm(D2(1:2))./norm(BS_b1(2,1:2)));
+PHI3b=acosd(dot(D3(1:2),BS_b1(2,1:2))./norm(D3(1:2))./norm(BS_b1(2,1:2)));
 %elevation angle
-THETA2b=180.*acos(dot([norm(D2(1:2)),D2(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D2))./pi;
-THETA3b=180.*acos(dot([norm(D3(1:2)),D3(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D3))./pi;
+THETA2b=acosd(dot([norm(D2(1:2)),D2(3)],[norm(BS_b1(2,1:2)),BS_b1(2,3)])./norm(BS_b1(2,:))./norm(D2)).*D2(3)./abs(D2(3));
+THETA3b=acosd(dot([norm(D3(1:2)),D3(3)],[norm(BS_b1(2,1:2)),BS_b1(2,3)])./norm(BS_b1(2,:))./norm(D3)).*D3(3)./abs(D3(3));
 
 %displacement vector to own BS
 %d1=[UE_b(1,1,i)-BS_b1(1,1),UE_a(2,1,i)-BS_a1(1,2),UE_a(3,1,i)-BS_a1(1,3)];
@@ -150,16 +149,17 @@ d2=[UE_b(1,2,i)-BS_b2(1,1),UE_b(2,2,i)-BS_b2(1,2),UE_b(3,2,i)-BS_b2(1,3)];
 d3=[UE_b(1,3,i)-BS_b3(1,1),UE_b(2,3,i)-BS_b3(1,2),UE_b(3,3,i)-BS_b3(1,3)];
 
 %angle between own BS max gain vector and displacement vector in xy plane
-phi2b=180.*acos(dot(d2(1:2),BS_b2(2,1:2))./norm(d2(1:2))./norm(BS_b2(2,1:2)))./pi;
-phi3b=180.*acos(dot(d3(1:2),BS_b3(2,1:2))./norm(d3(1:2))./norm(BS_b3(2,1:2)))./pi;
+phi2b=acosd(dot(d2(1:2),BS_b2(2,1:2))./norm(d2(1:2))./norm(BS_b2(2,1:2)));
+phi3b=acosd(dot(d3(1:2),BS_b3(2,1:2))./norm(d3(1:2))./norm(BS_b3(2,1:2)));
 
 %elevation angle
-theta2b=180.*acos(dot([norm(d2(1:2)),d2(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d2))./pi;
-theta3b=180.*acos(dot([norm(d2(1:2)),d3(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d3))./pi;
+theta2b=acosd(dot([norm(d2(1:2)),d2(3)],[norm(BS_b2(2,1:2)),BS_b2(2,3)])./norm(BS_b2(2,:))./norm(d2)).*d2(3)./abs(d2(3));
+theta3b=acosd(dot([norm(d2(1:2)),d3(3)],[norm(BS_b3(2,1:2)),BS_b3(2,3)])./norm(BS_b3(2,:))./norm(d3)).*d3(3)./abs(d3(3));
+
 
 %Antenna gain to own BS
-AntGain_b2_b2=F1336(phi2b,theta2b,G_0);
-AntGain_b3_b3=F1336(phi3b,theta3b,G_0);
+AntGain_b2_b2=F1336(phi2b,theta2b,G_0,tilt);
+AntGain_b3_b3=F1336(phi3b,theta3b,G_0,tilt);
 
 %propagation loss to Own BS
 %free space
@@ -167,8 +167,8 @@ AntGain_b3_b3=F1336(phi3b,theta3b,G_0);
 %L_b3_b3=20.*log10(lambda./(4.*pi.*norm(d3)));
 
 %P1546
-L_b2_b2=-P1546FieldStrMixed(708,50,1.5,h_BSb,0,'Suburban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
-L_b3_b3=-P1546FieldStrMixed(708,50,1.5,h_BSb,0,'Suburban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b2_b2=-P1546FieldStrMixed(708,50,h_BSb,h_UEb,0,'Urban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb);
+L_b3_b3=-P1546FieldStrMixed(708,50,h_BSb,h_UEb,0,'Uurban',norm(d2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb);
 
 
 %I_dBmUE1=SINR_target+noisefloor-F1336V(UE_b(:,1,i),BS_b1(1,:),BS_b1(2,:),18)-20.*log10(lambda./(4.*pi.*norm(d1)+1e-3))-UE_gain;
@@ -197,8 +197,8 @@ end
 
 
 %Antenna gain to reference BS
-AntGain_b2_b1=F1336(PHI2b,THETA2b,G_0);
-AntGain_b3_b1=F1336(PHI3b,THETA3b,G_0);
+AntGain_b2_b1=F1336(PHI2b,THETA2b,G_0,tilt);
+AntGain_b3_b1=F1336(PHI3b,THETA3b,G_0,tilt);
 
 %propagation loss to reference BS
 %free space
@@ -206,8 +206,8 @@ AntGain_b3_b1=F1336(PHI3b,THETA3b,G_0);
 %L_b3_b1=20.*log10(lambda./(4.*pi.*norm(D3)));
 
 %P1546
-L_b2_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
-L_b3_b1=-P1546FieldStrMixed(708,50,h_UEb,h_BSb,0,'Urban',norm(D3(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_UEb);
+L_b2_b1=-P1546FieldStrMixed(708,50,h_BSb,h_UEb,0,'Urban',norm(D2(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb);
+L_b3_b1=-P1546FieldStrMixed(708,50,h_BSb,h_UEb,0,'Urban',norm(D3(1:2))./1000,'Land',0, 'q', 50, 'Ptx', 1, 'ha', h_BSb);
 
 
 I_self(i)=10.^((I_dBmUE2+AntGain_b2_b1+L_b2_b1+UE_gain+L_body+L_feeder)./10);
@@ -226,21 +226,21 @@ I_self(i)=I_self(i)+10.^((I_dBmUE2+AntGain_b3_b1+L_b3_b1+UE_gain+L_body+L_feeder
 D1a=[UE_a(1,1,i)-BS_b1(1,1),UE_a(2,1,i)-BS_b1(1,2),UE_a(3,1,i)-BS_b1(1,3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-PHI1a=180.*acos(dot(D1a(1:2),BS_b1(2,1:2))./norm(D1a(1:2))./norm(BS_a1(2,1:2)))./pi;
+PHI1a=acosd(dot(D1a(1:2),BS_b1(2,1:2))./norm(D1a(1:2))./norm(BS_a1(2,1:2)));
 
 %elevation angle
-THETA1a=180.*acos(dot([norm(D1a(1:2)),D1a(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(D1a))./pi;
+THETA1a=acosd(dot([norm(D1a(1:2)),D1a(3)],[norm(BS_b1(2,1:2)),BS_b1(2,3)])./norm(BS_b1(2,:))./norm(D1a)).*D1a(3)./abs(D1a(3));
 
 
 d1a=[UE_a(1,1,i)-BS_a1(1,1),UE_a(2,1,i)-BS_a1(1,2),UE_a(3,1,i)-BS_a1(1,3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-phi1a=180.*acos(dot(d1a(1:2),BS_a1(2,1:2))./norm(d1a(1:2))./norm(BS_a1(2,1:2)))./pi;
+phi1a=acosd(dot(d1a(1:2),BS_a1(2,1:2))./norm(d1a(1:2))./norm(BS_a1(2,1:2)));
 
 %elevation angle
-theta1a=180.*acos(dot([norm(d1a(1:2)),d1a(3)],[cos(pi*tilt/180),sin(pi*tilt/180)])./norm(d1a))./pi;
+theta1a=acosd(dot([norm(d1a(1:2)),d1a(3)],[norm(BS_a1(2,1:2)),BS_a1(2,3)])./norm(BS_a1(2,:))./norm(d1a)).*d1a(3)./abs(d1a(3));
 
-AntGain_a1_a1=F1336(phi1a,theta1a,G_0);
+AntGain_a1_a1=F1336(phi1a,theta1a,G_0,tilt);
 
 L_a1_a1=20.*log10(lambda./(4.*pi.*norm(d1a)));
 
@@ -256,7 +256,7 @@ if I_dBmUE1<min_dBmUE
 end
 
 %Antenna gain to reference BS
-AntGain_a1_b1=F1336(PHI1a,THETA1a,G_0);
+AntGain_a1_b1=F1336(PHI1a,THETA1a,G_0,tilt);
 
 
 %propagation loss to reference BS
