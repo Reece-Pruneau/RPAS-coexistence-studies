@@ -1,5 +1,5 @@
 
-function G = F1336V(POS1,POS2,ORR2,G0)
+function G = F1336V(POS1,POS2,ORR2,G0,tilt)
 %function G=F1336(phi,theta,G0)
 %
 %function returns the gain of a sectoral antenna in dBi
@@ -33,20 +33,17 @@ phi3=65;
 d=[POS1(1)-POS2(1),POS1(2)-POS2(2),POS1(3)-POS2(3)];
 
 %angle between BS max gain vector and displacement vector in xy plane
-phi=180.*acos(dot(d(1:2),ORR2(1:2))./norm(d(1:2))./norm(ORR2(1:2)))./pi;
+phih=acosd(dot(d(1:2),ORR2(1:2))./norm(d(1:2))./norm(ORR2(1:2)));
 
 %elevation angle
-theta=180.*acos(dot([norm(d(1:2)),d(3)],[norm(ORR2(1:2)),ORR2(3)])./norm(d)./norm(ORR2))./pi;
+thetah=acosd(dot([norm(d(1:2)),d(3)],[norm(ORR2(1:2)),ORR2(3)])./norm(d)./norm(ORR2)).*d(3)./abs(d(3));
 
-
+theta=asind(sind(thetah).*cosd(-tilt)+cosd(thetah).*cosd(phih).*sind(-tilt));
+phi=acosd((-sind(thetah).*sind(-tilt)+cosd(thetah).*cosd(phih).*cosd(-tilt))./cosd(theta));
 
 %theta3=107.6.*10.^(-0.1.*G0); %BAD BAD BAD 
 theta3=31000.*10.^(-0.1.*G0)./phi3;
 
-
-
-%theta=asind(sind(theta)*cosd(-tilt)+cosd(theta)*cosd(phi)*sind(-tilt));
-%phi=acosd(-(sind(theta)*sind(-tilt)+cosd(theta)*cosd(phi)*cosd(-tilt))/cosd(theta));
 
 
 

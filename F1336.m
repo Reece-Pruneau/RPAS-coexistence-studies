@@ -1,5 +1,6 @@
-function G = F1336(phi,theta,G0)
-%function G=F1336(phi,theta,G0)
+function G = F1336(phih,thetah,G0,tilt)
+
+%function G=F1336(phi,theta,G0,tilt)
 %
 %function returns the gain of a sectoral antenna in dBi
 %Based on the ITU model F.1336 recomendation 3.1
@@ -28,7 +29,8 @@ theta3=31000.*10.^(-0.1.*G0)./phi3;
 
 %theta=asind(sind(theta)*cosd(-tilt)+cosd(theta)*cosd(phi)*sind(-tilt));
 %phi=acosd(-(sind(theta)*sind(-tilt)+cosd(theta)*cosd(phi)*cosd(-tilt))/cosd(theta));
-
+theta=asind(sind(thetah).*cosd(-tilt)+cosd(thetah).*cosd(phih).*sind(-tilt));
+phi=acosd((-sind(thetah).*sind(-tilt)+cosd(thetah).*cosd(phih).*cosd(-tilt))./cosd(theta));
 
 
 xh=abs(phi)./phi3;
@@ -51,8 +53,8 @@ R=(Ghr(xh,Kh,G180)-Ghr(180/phi3,Kh,G180))./(-Ghr(180/phi3,Kh,G180));
 
 G=G0+Ghr(xh,Kh,G180)+R.*Gvr(xv,xk,Kv,theta3,C,G180,peak);
     
-
 end
+
 
 function Ghr = Ghr(xh,Kh,G180)
 if xh<=0.5
@@ -83,4 +85,5 @@ elseif 4<=xv && xv<(90/theta3)
 elseif xv>=(90/theta3)
     Gvr=G180;
 end
+
 end
