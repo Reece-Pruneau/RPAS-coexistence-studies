@@ -12,8 +12,8 @@ function G = F1336(phih,thetah,G0,tilt)
 %All other parameters must be manually set bellow
 %
 %
-%peak=0; %average sidelobes
-peak=1; %peak sidelobes
+peak=0; %average sidelobes
+%peak=1; %peak sidelobes
 
 Ka=0.7;
 Kp=0.7;
