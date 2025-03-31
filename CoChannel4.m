@@ -26,14 +26,14 @@ SINR_target=10; %(dB)
 L_feeder=-3; %(dB)
 L_body=-4; %(dB)
 UE_gain=-3; %(dBi)
-L_entry=0; %(dB)
+L_entry=-14.5; %(dB)
 h_BSa=30; %BS antenna height (m)
 h_BSb=30;  %BS antenna height (m)
 h_UEb=1.5; %UE antenna height (m)
 G_0=15; %BS antenna gain (dBi)
-d_sep=18000; % (m) seperation distance between both networks
+d_sep=200000; % (m) seperation distance between both networks
 r_a=4000; %cell radius (m)
-n_a=100; %number of monte carlo runs
+n_a=200; %number of monte carlo runs
 
 max_dBmUE=36.95 - UE_gain; %max transmiting power of UEs (dBm)
 %according to RSS 130
@@ -41,9 +41,17 @@ max_dBmUE=36.95 - UE_gain; %max transmiting power of UEs (dBm)
 min_dBmUE=-40; %min transmiting power of UEs (dBm)
 nf=5; %noise figure (dB)
 
+%min received power per resource block
+P_0=-114+10*log10(180e3./bw)+nf+SINR_target;
 
+%coupling loss precentile
+CLp=max_dBmUE-P_0-10*log10(round(180e3./(0.95*bw)));
 
-
+%Building entry loss ITU rec P.2109-2
+%p=0.5; %probability to exceed 
+%F=0; %inverse cumulative normal distribution at p=0.5
+%f=fc/1e9; %center freq in GHz
+%L_entry=10*log10(10.^(0.1*F*(9.6+2*log10(f))+0.212*abs(tilt)+12.64+3.72*log10(f)+0.96*log10(f).^2)+10.^(0.1*F*(4.5-2*log10(f))+9.1-3*log10(f))+10.^(-0.3));
 
 %Noise
 noisefloor=10.*log10(1.380649e-23*290*bw*1000)+5;  %dBm
@@ -183,6 +191,7 @@ phi_a=NaN(3,19,n_a);
 theta_a=NaN(3,19,n_a);
 AntGain_a_a=NaN(3,19,n_a);
 L_a_a=NaN(3,19,n_a);
+indoor=NaN(3,19,n_a);
 
 I_dBmUEa=NaN(3,19,n_a);
 I_dBmUEb=NaN(3,19,n_a);
@@ -216,8 +225,16 @@ AntGain_b_b(s,n,i)=F1336(phi_b(s,n,i),theta_b(s,n,i),G_0,tilt);
 %P1546
 L_b_b(s,n,i)=P1546(round(vecnorm(d_b(s,n,i,1:2))));
 
-I_dBmUEb(s,n,i)=SINR_target+noisefloor-AntGain_b_b(s,n,i)-L_b_b(s,n,i)-UE_gain-L_feeder-L_body;
 
+if rand<0.5
+indoor(s,n,i)=0;
+I_dBmUEb(s,n,i)=max_dBmUE+min([0,max([max_dBmUE-min_dBmUE,-AntGain_b_b(s,n,i)-L_b_b(s,n,i)-UE_gain-L_feeder-L_body-CLp])]);
+
+else
+indoor(s,n,i)=1;
+I_dBmUEb(s,n,i)=max_dBmUE+min([0,max([max_dBmUE-min_dBmUE,-AntGain_b_b(s,n,i)-L_b_b(s,n,i)-UE_gain-L_feeder-L_body-L_entry-CLp])]);
+
+end
 
 if I_dBmUEb(s,n,i)>max_dBmUE
     I_dBmUEb(s,n,i)=max_dBmUE;
@@ -246,10 +263,7 @@ AntGain_a_a(s,n,i)=F1336(phi_a(s,n,i),theta_a(s,n,i),G_0,tilt);
 L_a_a(s,n,i)=20.*log10(lambda./(4.*pi.*vecnorm(d_a(s,n,i,:))));
 
 
-
-
-I_dBmUEa(s,n,i)=SINR_target+noisefloor-AntGain_a_a(s,n,i)-L_a_a(s,n,i)-UE_gain-L_feeder;
-
+I_dBmUEa(s,n,i)=max_dBmUE+min([0,max([max_dBmUE-min_dBmUE,-AntGain_a_a(s,n,i)-L_a_a(s,n,i)-UE_gain-L_feeder-CLp])]);
 
 if I_dBmUEa(s,n,i)>max_dBmUE
     I_dBmUEa(s,n,i)=max_dBmUE;
@@ -268,11 +282,13 @@ end
 toc
 
 %Seperation Distance Sweep
-%d_s=linspace(1000,200000,200);
-%for t=1:200
+mean_throughput_loss=zeros(1,200);
+d_s=zeros(1,200);
+for t=1:200
 
- % UE_b(2,:,:,:) = UE_b(2,:,:,:)+d_s(t);
-  %BS_b(2,:) = BS_b(2,:)+d_s(t);
+  UE_b(2,:,:,:) = UE_b(2,:,:,:)+1000;
+  BS_b(2,:) = BS_b(2,:)+1000;
+  d_s(t)=t*1000;
   
 %note there are two sets of displacement vectors and angles
 %UPPER CASE is wrt to reference cell BS 
@@ -325,8 +341,12 @@ AntGain_b_r(S,N,s,n,i)=F1336(PHI_b(S,N,s,n,i),THETA_b(S,N,s,n,i),G_0,tilt);
 %P1546
 L_b_r(S,N,s,n,i)=P1546(round(vecnorm(D_b(S,N,s,n,i,1:2))));
 
+if indoor(s,n,i)==0
 I_b(S,N,s,n,i)=10.^((I_dBmUEb(s,n,i)+AntGain_b_r(S,N,s,n,i)+L_b_r(S,N,s,n,i)+UE_gain+L_body+L_feeder)./10); %mW
-
+elseif indoor(s,n,i)==1
+I_b(S,N,s,n,i)=10.^((I_dBmUEb(s,n,i)+AntGain_b_r(S,N,s,n,i)+L_b_r(S,N,s,n,i)+UE_gain+L_body+L_feeder+L_entry)./10); %mW
+end
+    
 
 
 
@@ -387,8 +407,8 @@ bitloss=100.*(log2(1+SINR_0)-log2(1+SINR))./(log2(1+SINR_0));
 throughput_loss_map=squeeze(mean(bitloss,3));
 
 %average over whole network (sectors & BS)
-mean_throughput_loss=squeeze(mean(mean(throughput_loss_map,1),2));
-%end
+mean_throughput_loss(t)=squeeze(mean(mean(throughput_loss_map,1),2));
+end
 
 
 network_loss_i=squeeze(mean(mean(bitloss,1),2));
@@ -422,8 +442,8 @@ hold off
 %xlabel("Number of Runs n_a")
 %ylabel("Throughput Loss change per run (%)")
 
-%plot(d_s,mean_throughput_loss)
-%xlabel("Seperation Distance (m)")
-%ylabel("Network Throughput Loss (%)")
+plot(d_s,mean_throughput_loss)
+xlabel("Seperation Distance (m)")
+ylabel("Network Throughput Loss (%)")
 
 toc
