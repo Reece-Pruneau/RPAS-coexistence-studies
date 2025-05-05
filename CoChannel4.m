@@ -17,33 +17,112 @@ clear all
 %start run timer
 tic
 
+for d=1:80
+    d_sep=d*1000
+   
+%for a=1:60 
+ 
 
-fc=708000000; %center frequency (Hz)
+%Low Band RURAL
+fc=708e6; %center frequency (Hz)
 lambda=299792458/fc; %wavelength (m)
-bw=5000000; %bandwidth (Hz)
+bw=5e6; %bandwidth (Hz)
 tilt=-3;  %mechanical downtilt (degrees)
-SINR_target=10; %(dB)
 L_feeder=-3; %(dB)
 L_body=-4; %(dB)
+SINR_target=3.2; %(dB)
 UE_gain=-3; %(dBi)
-L_entry=-14.5; %(dB)
+L_entry=-14.1; %(dB)
+indoor_ratio=0.5; %ratio of terestrial UEs indoors, between 0 and 1 (0 being all outdoor) 
 h_BSa=30; %BS antenna height (m)
 h_BSb=30;  %BS antenna height (m)
+h_BSc=30;
 h_UEb=1.5; %UE antenna height (m)
 G_0=15; %BS antenna gain (dBi)
-d_sep=12500; % (m) seperation distance between both networks
-r_a=4000; %cell radius (m)
-n_a=200; %number of monte carlo runs
+d_sep=11000; % (m) seperation distance between both networks
+n_a=2000; %number of monte carlo runs
+offset=0; %degrees
+r_a=2500; %cell radius (m)
 
-max_dBmUE=23;
+
+%{
+%Low Band URBAN
+fc=708e6; %center frequency (Hz)
+lambda=299792458/fc; %wavelength (m)
+bw=5e6; %bandwidth (Hz)
+tilt=-3;  %mechanical downtilt (degrees)
+L_feeder=-3; %(dB)
+L_body=-4; %(dB)
+SINR_target=10;%18.5; %(dB)
+UE_gain=-3; %(dBi)
+L_entry=-14.1; %(dB)
+indoor_ratio=0.7; %ratio of terestrial UEs indoors, between 0 and 1 (0 being all outdoor) 
+h_BSa=30; %BS antenna height (m)
+h_BSb=30;  %BS antenna height (m)
+h_BSc=30;
+h_UEb=1.5; %UE antenna height (m)
+G_0=15; %BS antenna gain (dBi)
+d_sep=70000; % (m) seperation distance between both networks
+n_a=2000; %number of monte carlo runs
+offset=0; %degrees
+r_a=1000; %cell radius (m)
+%}
+%{
+%Mid Band RURAL
+fc=1900e6; %center frequency (Hz)
+lambda=299792458/fc; %wavelength (m)
+bw=5e6; %bandwidth (Hz)
+tilt=-3;  %mechanical downtilt (degrees)
+L_feeder=-3; %(dB)
+L_body=-4; %(dB)
+SINR_target=13.2; %(dB)
+UE_gain=0; %(dBi)
+L_entry=-14.9; %(dB)
+indoor_ratio=0.5; %ratio of terestrial UEs indoors, between 0 and 1 (0 being all outdoor) 
+h_BSa=30; %BS antenna height (m)
+h_BSb=30;  %BS antenna height (m)
+h_BSc=30;
+h_UEb=1.5; %UE antenna height (m)
+G_0=18; %BS antenna gain (dBi)
+d_sep=11000; % (m) seperation distance between both networks
+n_a=2000; %number of monte carlo runs
+offset=60; %degrees
+r_a=2500; %cell radius (m)
+%}
+%{
+%Mid Band URBAN
+fc=1900e6; %center frequency (Hz)
+lambda=299792458/fc; %wavelength (m)
+bw=5e6; %bandwidth (Hz)
+tilt=-10;  %mechanical downtilt (degrees)
+L_feeder=-3; %(dB)
+L_body=-4; %(dB)
+SINR_target=10;%25.3; %(dB)
+UE_gain=0; %(dBi)
+L_entry=-14.9; %(dB)
+indoor_ratio=0.7; %ratio of terestrial UEs indoors, between 0 and 1 (0 being all outdoor) 
+h_BSa=25; %BS antenna height (m)
+h_BSb=25;  %BS antenna height (m)
+h_BSc=25;
+h_UEb=1.5; %UE antenna height (m)
+G_0=16; %BS antenna gain (dBi)
+d_sep=11000; % (m) seperation distance between both networks
+n_a=2000; %number of monte carlo runs
+offset=0; %degrees
+%r_a=250; %cell radius (m)
+r_a=1000;
+
+%}
+max_dBmUE=23+10*log10(bw/5e6);
 %max_dBmUE=36.95 - UE_gain; %max transmiting power of UEs (dBm)
 %according to RSS 130
 
-min_dBmUE=-40; %min transmiting power of UEs (dBm)
+min_dBmUE=-40+10*log10(bw/5e6); %min transmiting power of UEs (dBm)
+
 nf=5; %noise figure (dB)
 
 %min received power per resource block
-P_0=-114+10*log10(180e3./bw)+nf+SINR_target;
+P_0=10*log10(bw)-173.8+10*log10(180e3./bw)+nf+SINR_target;
 
 %number of allocated resource blocks
 M_pusch=10*log10(round((0.95*bw)./180e3));
@@ -66,8 +145,9 @@ N_thermal=10.^(noisefloor./10); %mW
 %so we can plot the outline later
 %7 because there are 7 corner (first + last overlap)
 %2 because x&y
-%6 because we have two tri-sectors (A&B) that share a number
-outline=NaN(7,2,19,6);
+%3 because we have tri-sectors
+outline_a=NaN(7,2,19,3);
+outline_b=NaN(7,2,19,3);
 
 
 %Interfering network A
@@ -110,9 +190,9 @@ UE_a=zeros(3,3,19,n_a);
 %Generate n_a aerial UE positions per sector (also generates outline points
 %for sector hexagonal outline
 for n=1:19
-[UE_a(1:2,1,n,:),outline(:,:,n,1)]=randHEX(r_a,BS_a(2,n)+r_a,BS_a(1,n),n_a);
-[UE_a(1:2,2,n,:),outline(:,:,n,2)]=randHEX(r_a,BS_a(2,n)-0.5*r_a,BS_a(1,n)+0.866*r_a,n_a);
-[UE_a(1:2,3,n,:),outline(:,:,n,3)]=randHEX(r_a,BS_a(2,n)-0.5*r_a,BS_a(1,n)-0.866*r_a,n_a);
+[UE_a(1:2,1,n,:),outline_a(:,:,n,1)]=randHEX(r_a,BS_a(2,n)+r_a,BS_a(1,n),n_a);
+[UE_a(1:2,2,n,:),outline_a(:,:,n,2)]=randHEX(r_a,BS_a(2,n)-0.5*r_a,BS_a(1,n)+0.866*r_a,n_a);
+[UE_a(1:2,3,n,:),outline_a(:,:,n,3)]=randHEX(r_a,BS_a(2,n)-0.5*r_a,BS_a(1,n)-0.866*r_a,n_a);
 end
 
 %outline(:,:,1)=[BS_a1(1,2)+r_a,BS_a1(1,1)]+[r_a,0;r_a/2,sqrt(3)*r_a/2;-r_a/2,sqrt(3)*r_a/2;-r_a,0;-r_a/2,-sqrt(3)*r_a/2;r_a/2,-sqrt(3)*r_a/2;r_a,0];
@@ -163,53 +243,60 @@ UE_b(3,:,:,:)=h_UEb;
 
 %Generate n_a terrestrial UE positions per sector
 for n=1:19
-[UE_b(1:2,1,n,:),outline(:,:,n,4)]=randHEX(r_a,BS_b(2,n)-r_a,BS_b(1,n),n_a);
-[UE_b(1:2,2,n,:),outline(:,:,n,5)]=randHEX(r_a,BS_b(2,n)+0.5*r_a,BS_b(1,n)+0.866*r_a,n_a);
-[UE_b(1:2,3,n,:),outline(:,:,n,6)]=randHEX(r_a,BS_b(2,n)+0.5*r_a,BS_b(1,n)-0.866*r_a,n_a);
+[UE_b(1:2,1,n,:),outline_b(:,:,n,1)]=randHEX(r_a,BS_b(2,n)-r_a,BS_b(1,n),n_a);
+[UE_b(1:2,2,n,:),outline_b(:,:,n,2)]=randHEX(r_a,BS_b(2,n)+0.5*r_a,BS_b(1,n)+0.866*r_a,n_a);
+[UE_b(1:2,3,n,:),outline_b(:,:,n,3)]=randHEX(r_a,BS_b(2,n)+0.5*r_a,BS_b(1,n)-0.866*r_a,n_a);
 end
 
-%{
-%Rotation of network A in XY with BS(8) as axis
-offset=45; %degrees
+
+%Rotation of network A in XY with BS_b(:,10) as axis
+%offset=0; %degrees
 R=[cosd(offset),-sind(offset);
     sind(offset),cosd(offset)];
+
+%move center of B network to origin
+BS_b(2,:)=BS_b(2,:)-(d_sep);
+UE_b(2,:,:,:)=UE_b(2,:,:,:)-(d_sep);
+outline_b(:,2,:,:)=outline_b(:,2,:,:)-(d_sep);
+
+%Apply rotation opperator
 for s=1:3
-    temp=R*squeeze(BS_aV(s,1:2))';
-    BS_aV(s,1:2)=temp';
+    temp=R*squeeze(BS_bV(s,1:2))';
+    BS_bV(s,1:2)=temp';
     for n=1:19
-        temp=R*squeeze(BS_a(1:2,n));
-        BS_a(1:2,n)=temp;
+        toomp=R*squeeze(BS_b(1:2,n));
+        BS_b(1:2,n)=toomp;
         for p=1:7
-            temp=R*squeeze(outline(p,:,n,s)');
-            outline(p,:,n,s)=temp;
+            broomp=R*squeeze(outline_b(p,:,n,s)');
+            outline_b(p,:,n,s)=broomp';
         end
         for i=1:n_a
-          temp=R*squeeze(UE_b(1:2,s,n,i));
-          UE_a(1:2,s,n,i)=temp;
+          keith=R*squeeze(UE_b(1:2,s,n,i));
+          UE_b(1:2,s,n,i)=keith;
         end
     end
 end
-%}
-%Plotting hex outlines and UE positions
-hold on
-for n=1:19
-for s=1:3
- plot(outline(:,2,n,s),outline(:,1,n,s),'b')
- plot(outline(:,2,n,s+3),outline(:,1,n,s+3),'r')
- %{
-    for i=1:n_a
-      if s~=1 || n~=8
-     scatter(UE_b(1,s,n,i),UE_b(2,s,n,i),[],10.*log10(I_b(1,8,s,n,i)),'filled')
-      end
-     scatter(UE_a(1,s,n,i),UE_a(2,s,n,i),[],10.*log10(I_a(1,8,s,n,i)),'filled')
-    %plot(UE(1,i),UE(2,i),'k.')
-    end
-    %}
-end
-end
-xlabel('x position (m)')
-ylabel('y position (m)')
 
+%move network to original position
+BS_b(2,:)=BS_b(2,:)+(d_sep);
+UE_b(2,:,:,:)=UE_b(2,:,:,:)+(d_sep);
+outline_b(:,2,:,:)=outline_b(:,2,:,:)+(d_sep);
+
+%{
+%Axis of rotation
+offset=90; %degrees
+x0=0;
+y0=6*r_a+d_sep;
+
+UE_b(1,:,:,:) = (cosd(offset).*(UE_b(1,:,:,:)-x0)) - (sind(offset).*(UE_b(2,:,:,:)-y0)) + x0;
+UE_b(2,:,:,:) = (sind(offset).*(UE_b(1,:,:,:)-x0)) + (cosd(offset).*(UE_b(2,:,:,:)-y0)) + y0;
+
+BS_b(1,:) = (cosd(offset).*(BS_b(1,:)-x0)) - (sind(offset).*(BS_b(2,:)-y0)) + x0;
+BS_b(2,:) = (sind(offset).*(BS_b(1,:)-x0)) + (cosd(offset).*(BS_b(2,:)-y0)) + y0;
+
+outline_b(:,1,:,:) = (cosd(offset).*(outline_b(:,1,:,:)-x0)) - (sind(offset).*(outline_b(:,2,:,:)-y0)) + x0;
+outline_b(:,2,:,:) = (sind(offset).*(outline_b(:,1,:,:)-x0)) + (cosd(offset).*(outline_b(:,2,:,:)-y0)) + y0;
+%}
 %count number of UEs over or under tx power range
 n_UEmaxB=zeros(3,19);
 n_UEminB=zeros(3,19);
@@ -228,8 +315,8 @@ Signal=zeros(3,19,n_a); %incase power control cannot meet target SINR
 %Dat=load("P1546_708MHz_50%_1.5m_30m_10m_rural_1to3e5m.mat");
 %P1546=Dat.P1546;
 
-Dat=load("P452_10percent.npy.mat");
-P452=Dat.P452_10percent;
+Dat=load("P452_10percent_Below22m.npy.mat");
+P452=Dat.P452_10percent_Below22m;
 
 temp=load("P528_0to300km_30m_to_300m_708MHz_0_10%.mat");
 L528=temp.L528;
@@ -253,14 +340,19 @@ indoor=NaN(3,19,n_a);
 I_dBmUEa=NaN(3,19,n_a);
 I_dBmUEb=NaN(3,19,n_a);
 
-
+%UE_a(3,:,:,:)=h_UEb;
 %Loop to calculate tx power for all UEs using power control
 for i=1:n_a %iterate over each monte carlo run
 for n=1:19  %iterate over each BS
 for s=1:3   %iterate over each sector
 
-
-UE_a(3,s,n,i)=(rand*270)+30; %generate random drone altitude
+   
+if rand>0.33
+   UE_a(3,s,n,i)=1.5;
+else
+UE_a(3,s,n,i)=rand*300; %generate random drone altitude
+end
+    
 
 %displacement vector to own BS
 d_b(s,n,i,:)=[UE_b(1,s,n,i)-BS_b(1,n),UE_b(2,s,n,i)-BS_b(2,n),UE_b(3,s,n,i)-BS_b(3,n)];
@@ -279,10 +371,10 @@ AntGain_b_b(s,n,i)=F1336(phi_b(s,n,i),theta_b(s,n,i),G_0,tilt);
 %L_b_b(s,n,i)=20.*log10(lambda./(4.*pi.*vecnorm(d_b(s,n,i,:))));
 
 %P1546
-L_b_b(s,n,i)=-P452(round(vecnorm(d_b(s,n,i,1:2))));
+L_b_b(s,n,i)=-P452(round(vecnorm(d_b(s,n,i,1:2))),1);
 
 
-if rand<0.5
+if rand<indoor_ratio
 indoor(s,n,i)=0;
 I_dBmUEb(s,n,i)=min([max_dBmUE,M_pusch+P_0-AntGain_b_b(s,n,i)-L_b_b(s,n,i)-UE_gain-L_feeder-L_body]);
 
@@ -319,11 +411,24 @@ AntGain_a_a(s,n,i)=F1336(phi_a(s,n,i),theta_a(s,n,i),G_0,tilt);
 %free space
 %L_a_a(s,n,i)=20.*log10(lambda./(4.*pi.*vecnorm(d_a(s,n,i,:))));
 
+if UE_a(3,s,n,i)>22
 %ITU P528
-[~, Hindex] = min(abs(h528-UE_a(3,s,n,i)));
-[~, Dindex] = min(abs(d528-vecnorm(d_a(s,n,i,1:2))));
-
-L_a_a(s,n,i)=-L528(Hindex,Dindex);
+%[~, Hindex] = min(abs(h528-UE_a(3,s,n,i)));
+%[~, Dindex] = min(abs(d528-vecnorm(d_a(s,n,i,1:2))));
+%temp=tl_p528(vecnorm(d_a(s,n,i,1:2))./1000,h_BSa,UE_a(3,s,n,i),fc./1e6,1,10);
+%L_a_a(s,n,i)=temp.A__db;
+    L_a_a(s,n,i)=-L528(Hindex,Dindex);
+elseif UE_a(3,s,n,i)<22 && UE_a(3,s,n,i)>=19
+    L_a_a(s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),5);
+elseif UE_a(3,s,n,i)<19 && UE_a(3,s,n,i)>=14
+    L_a_a(s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),4);
+elseif UE_a(3,s,n,i)<14 && UE_a(3,s,n,i)>=9
+    L_a_a(s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),3);
+elseif UE_a(3,s,n,i)<9 && UE_a(3,s,n,i)>=4
+    L_a_a(s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),2);
+elseif UE_a(3,s,n,i)<4
+    L_a_a(s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),1);
+end
 
 I_dBmUEa(s,n,i)=min([max_dBmUE,M_pusch+P_0-AntGain_a_a(s,n,i)-L_a_a(s,n,i)-UE_gain-L_feeder]);
 
@@ -366,9 +471,10 @@ I_b=zeros(3,19,3,19,n_a); %self interference from tertrial network
 I_a=zeros(3,19,3,19,n_a); %Interference from aerial network
 
 
-for N=1:19   %Change reference BS
-for S=1:3    %Change reference sector
-    
+%for N=1:19   %Change reference BS
+%for S=1:3    %Change reference sector
+ N=8;
+ S=1;
 
 for n=1:19  %iterate over each BS in both networks
 for s=1:3   %iterate over each sector
@@ -396,7 +502,7 @@ AntGain_b_r(S,N,s,n,i)=F1336(PHI_b(S,N,s,n,i),THETA_b(S,N,s,n,i),G_0,tilt);
 %L_b_r(S,N,s,n,i)=20.*log10(lambda./(4.*pi.*vecnorm(D_b(S,N,s,n,i,:))));
 
 %P1546
-L_b_r(S,N,s,n,i)=-P452(round(vecnorm(D_b(S,N,s,n,i,1:2))));
+L_b_r(S,N,s,n,i)=-P452(round(vecnorm(D_b(S,N,s,n,i,1:2))+1),1);
 
 
 
@@ -411,7 +517,11 @@ Signal(S,N,i)=I_b(S,N,s,n,i);
 I_b(S,N,s,n,i)=0;
 
 end %end if statment since all sectors in A interfere to each reference sector
-
+  
+% 50% LOADING factor
+if rand<0.5 
+   I_b(S,N,s,n,i)=0;
+end
 
 %Calculate Interference
 
@@ -432,29 +542,50 @@ AntGain_a_r(S,N,s,n,i)=F1336(PHI_a(S,N,s,n,i),THETA_a(S,N,s,n,i),G_0,tilt);
 %free space
 %L_a_r(S,N,s,n,i)=20.*log10(lambda./(4.*pi.*vecnorm(D_a(S,N,s,n,i,:))));
 
+if UE_a(3,s,n,i)>22
 %ITU P528
 [~, Hindex] = min(abs(h528-UE_a(3,s,n,i)));
 [~, Dindex] = min(abs(d528-vecnorm(D_a(S,N,s,n,i,1:2))));
 
-L_a_r(S,N,s,n,i)=-L528(Hindex,Dindex);
+%temp=tl_p528(vecnorm(D_a(s,n,i,1:2))./1000,h_BSa,UE_a(3,s,n,i),fc./1e6,1,10);
+%L_a_r(S,N,s,n,i)=temp.A__db;
+    L_a_r(S,N,s,n,i)=-L528(Hindex,Dindex);
+elseif UE_a(3,s,n,i)<22 && UE_a(3,s,n,i)>=19
+    L_a_r(S,N,s,n,i)=-P452(round(vecnorm(D_a(S,N,s,n,i,1:2))+1),5);
+elseif UE_a(3,s,n,i)<19 && UE_a(3,s,n,i)>=14
+    L_a_r(S,N,s,n,i)=-P452(round(vecnorm(D_a(S,N,s,n,i,1:2))+1),4);
+elseif UE_a(3,s,n,i)<14 && UE_a(3,s,n,i)>=9
+    L_a_r(S,N,s,n,i)=-P452(round(vecnorm(D_a(S,N,s,n,i,1:2))+1),3);
+elseif UE_a(3,s,n,i)<9 && UE_a(3,s,n,i)>=4
+    L_a_r(S,N,s,n,i)=-P452(round(vecnorm(D_a(S,N,s,n,i,1:2))+1),2);
+elseif UE_a(3,s,n,i)<4
+    L_a_r(S,N,s,n,i)=-P452(round(vecnorm(d_a(s,n,i,1:2))+1),1);
+end
 
 I_a(S,N,s,n,i)=10.^((I_dBmUEa(s,n,i)+AntGain_a_r(S,N,s,n,i)+L_a_r(S,N,s,n,i)+UE_gain+L_feeder)./10); %mW
 
+% 50% LOADING factor
+if rand<0.5 
+   I_a(S,N,s,n,i)=0;
+end
+
 end
 
 end
 end
 
-end
-end
+%end
+%end
+
+
 
 
 
 
 
 %Aggregate all interference (sum along n,s)
-I_0=0.5.*squeeze(sum(sum(I_b,3),4));
-I=0.5.*squeeze(sum(sum(I_a,3),4));
+I_0=squeeze(sum(sum(I_b,3),4));
+I=squeeze(sum(sum(I_a,3),4));
 
 %I over Thermal
 IoT_map=squeeze(mean(10*log10((I+N_thermal)./N_thermal),3));
@@ -499,19 +630,69 @@ throughput_0(idx)=0;
 %throughput loss (%)
 bitloss=100.*(log2(1+SINR_0)-log2(1+SINR))./(log2(1+SINR_0));
 
+%loss_scatter(d,:)=bitloss(1,8,:);
 %average over all n_a (gives value for each sector in B network)
 throughput_loss_map=squeeze(mean(bitloss,3));
 
 %average over whole network (sectors & BS)
-mean_throughput_loss=squeeze(mean(mean(throughput_loss_map,1),2));
+mean_throughput_loss(d)=squeeze(mean(mean(throughput_loss_map,1),2));
 %end
 
 
-network_loss_i=squeeze(mean(mean(bitloss,1),2));
-for i=2:n_a
-average_loss(i)=mean(network_loss_i(2:i));
-n_runs(i)=i;
+%[CDF_IoN_P,CDF_IoN_V]=homemade_ecdf(reshape(IoN,[1,57*n_a]));
+%[CDF_IoN_0_P,CDF_IoN_0_V]=homemade_ecdf(reshape(IoN_0,[1,57*n_a]));
+%[CDF_SINR_P,CDF_SINR_V]=homemade_ecdf(reshape(SINR,[1,57*n_a]));
+%[CDF_SINR_0_P,CDF_SINR_0_V]=homemade_ecdf(reshape(SINR_0,[1,57*n_a]));
+%[CDF_throughput_P,CDF_throughput_V]=homemade_ecdf(reshape(throughput,[1,57*n_a]));
+%[CDF_throughput_0_P,CDF_throughput_0_V]=homemade_ecdf(reshape(throughput_0,[1,57*n_a]));
+%[CDF_loss_sys_P,CDF_loss_sys_V]=homemade_ecdf(reshape(bitloss,[1,57*n_a]));
+
+[CDF_IoN_ref_P, CDF_IoN_ref_V]=homemade_ecdf(reshape(IoN(1,8,:),[1,n_a]));
+[CDF_loss_ref_P, CDF_loss_ref_V]=homemade_ecdf(reshape(bitloss(1,8,:),[1,n_a]));
+
+loss_ref_50th=throughput_loss_map(1,8);
+IoN_ref_50th=IoN_map(1,8);
+
+loss_ref_95th(d)=CDF_loss_ref_V(round(0.95*(n_a+1)));
+IoN_ref_95th=CDF_IoN_ref_V(round(0.95*(n_a+1)));
+
+%loss_sys_95th=CDF_loss_sys_V(round(0.95*(n_a+1)));
 end
+
+
+
+%Plotting hex outlines and UE positions
+cmap=jet;
+hexValues=throughput_loss_map;
+hexColor=size(cmap,1)*(hexValues-min(hexValues)+1)./(max(hexValues)-min(hexValues));
+
+hold on
+for n=1:19
+for s=1:3
+    
+    
+    
+ plot(outline_b(:,1,n,s),outline_b(:,2,n,s),'b')
+ plot(outline_a(:,1,n,s),outline_a(:,2,n,s),'r')
+ 
+ if s==1 && n==8
+     fill(outline_b(:,1,n,s),outline_b(:,2,n,s),'r')
+ end
+ %{
+    for i=1:n_a
+      if s~=1 || n~=8
+     scatter(UE_b(1,s,n,i),UE_b(2,s,n,i),[],10.*log10(I_b(1,8,s,n,i)),'filled')
+      end
+     scatter(UE_a(1,s,n,i),UE_a(2,s,n,i),[],10.*log10(I_a(1,8,s,n,i)),'filled')
+    %plot(UE(1,i),UE(2,i),'k.')
+    end
+    %}
+end
+end
+%plot(squeeze(UE_b(1,2,8,:)),squeeze(UE_b(2,2,8,:)))
+xlabel('x position (m)')
+ylabel('y position (m)')
+hold off
 
 %{
 %Plotting hex outlines and UE positions

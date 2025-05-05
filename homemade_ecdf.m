@@ -10,5 +10,5 @@ function [v_f,v_x] = homemade_ecdf(v_data)
     end
     v_x = [v_unique_data(1) v_unique_data];
     v_f = [0 v_data_ecdf];
-    plot(v_x,v_f)
+    %plot(v_x,v_f);
 end

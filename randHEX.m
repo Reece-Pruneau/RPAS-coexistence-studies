@@ -75,6 +75,7 @@ Points(2,:)=Points(2,:)+lat;
 
 %generate outline (note firt and last coordinate are the same)
 outline=[lat,lon]+[r,0;r/2,sqrt(3)*r/2;-r/2,sqrt(3)*r/2;-r,0;-r/2,-sqrt(3)*r/2;r/2,-sqrt(3)*r/2;r,0];
+outline=flip(outline,2);
 %plot(Points(1,:),Points(2,:),'.r');
 
 end
